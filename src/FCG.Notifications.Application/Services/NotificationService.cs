@@ -1,4 +1,6 @@
-namespace FCG.Notifications.Worker.Services;
+using Microsoft.Extensions.Logging;
+
+namespace FCG.Notifications.Application.Services;
 
 public class NotificationService : INotificationService
 {

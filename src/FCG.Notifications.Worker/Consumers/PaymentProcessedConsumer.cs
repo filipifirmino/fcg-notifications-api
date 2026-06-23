@@ -1,5 +1,5 @@
+using FCG.Notifications.Application.Services;
 using FCG.Notifications.Worker.Events;
-using FCG.Notifications.Worker.Services;
 using MassTransit;
 
 namespace FCG.Notifications.Worker.Consumers;

@@ -40,17 +40,18 @@ Serviço do tipo **Worker Service** — sem controllers ou endpoints HTTP. Toda 
 ```
 fcg-notifications-api/
 ├── src/
-│   └── FCG.Notifications.Worker/
-│       ├── Consumers/               # UserCreatedConsumer, PaymentProcessedConsumer
-│       ├── Events/                  # Contratos de evento (copiados por valor)
-│       ├── Services/                # INotificationService, NotificationService
-│       ├── Configuration/           # ConfigureMessaging (extensão MassTransit)
+│   ├── FCG.Notifications.Application/   # Camada de aplicação
+│   │   └── Services/                    # INotificationService, NotificationService
+│   └── FCG.Notifications.Worker/        # Entry point (camada de apresentação)
+│       ├── Consumers/                   # UserCreatedConsumer, PaymentProcessedConsumer
+│       ├── Events/                      # Contratos de evento (copiados por valor)
+│       ├── Configuration/               # ConfigureMessaging (extensão MassTransit)
 │       ├── Program.cs
 │       ├── appsettings.json
 │       └── appsettings.Development.json
-├── k8s/                             # Manifests Kubernetes
-├── docker-compose.yml               # Ambiente local (worker + RabbitMQ)
-└── Dockerfile                       # Multi-stage, usuário não-root
+├── k8s/                                 # Manifests Kubernetes
+├── docker-compose.yml                   # Ambiente local (worker + RabbitMQ)
+└── Dockerfile                           # Multi-stage, usuário não-root
 ```
 
 ### Padrões aplicados
@@ -246,6 +247,10 @@ echo -n "sua_senha" | base64
 
 ```
 src/
+├── FCG.Notifications.Application/
+│   └── Services/
+│       ├── INotificationService.cs         # Contrato da camada de aplicação
+│       └── NotificationService.cs          # Implementação via log estruturado
 └── FCG.Notifications.Worker/
     ├── Consumers/
     │   ├── UserCreatedConsumer.cs          # Boas-vindas ao novo usuário
@@ -253,9 +258,6 @@ src/
     ├── Events/
     │   ├── UserCreatedEvent.cs             # Contrato do evento (cópia por valor)
     │   └── PaymentProcessedEvent.cs        # Contrato do evento (cópia por valor)
-    ├── Services/
-    │   ├── INotificationService.cs         # Abstração para facilitar evolução
-    │   └── NotificationService.cs          # Implementação via log estruturado
     ├── Configuration/
     │   └── ConfigureMessaging.cs           # Extension method — MassTransit + RabbitMQ
     ├── Program.cs
