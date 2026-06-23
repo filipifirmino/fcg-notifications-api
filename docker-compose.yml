@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: fcg_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notifications-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fcg_notifications_worker
+    environment:
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - DOTNET_ENVIRONMENT=Production
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
