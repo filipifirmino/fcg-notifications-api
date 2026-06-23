@@ -1,0 +1,14 @@
+# Worker Service sem endpoints HTTP expostos.
+# Este Service não é necessário para o funcionamento do worker,
+# mas é mantido para consistência dos manifests do cluster
+# e para permitir health checks futuros via porta de diagnóstico.
+apiVersion: v1
+kind: Service
+metadata:
+  name: notifications-worker
+  labels:
+    app: notifications-worker
+spec:
+  selector:
+    app: notifications-worker
+  clusterIP: None  # Headless — nenhuma porta exposta
