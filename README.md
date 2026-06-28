@@ -1,6 +1,6 @@
 # FCG Notifications API — Grupo 14
 
-Microsserviço responsável por simular o envio de e-mails da plataforma FIAP Cloud Games (FCG), operando exclusivamente via mensageria assíncrona (sem endpoints HTTP). Serviço novo criado na Fase 2 — migração para microsserviços.
+Microsserviço responsável por simular o envio de e-mails da plataforma FIAP Cloud Games (FCG), operando exclusivamente via mensageria assíncrona (sem endpoints HTTP). Serviço criado na Fase 2 — migração para microsserviços.
 
 ---
 
@@ -11,6 +11,7 @@ Microsserviço responsável por simular o envio de e-mails da plataforma FIAP Cl
 - [Tecnologias](#tecnologias)
 - [Fluxo de Mensagens](#fluxo-de-mensagens)
 - [Notificações Simuladas](#notificações-simuladas)
+- [Testes](#testes)
 - [Pré-requisitos](#pré-requisitos)
 - [Variáveis de Ambiente](#variáveis-de-ambiente)
 - [Rodando localmente](#rodando-localmente)
@@ -35,30 +36,30 @@ Microsserviço responsável por simular o envio de e-mails da plataforma FIAP Cl
 
 ## Arquitetura
 
-Serviço do tipo **Worker Service** — sem controllers ou endpoints HTTP. Toda comunicação ocorre via eventos RabbitMQ usando MassTransit. Sem banco de dados, sem domínio complexo.
+Serviço do tipo **Worker Service** organizado em **Clean Architecture** com 4 camadas de código + 1 projeto de testes, seguindo o mesmo padrão dos demais microsserviços do ecossistema FCG.
 
 ```
-fcg-notifications-api/
-├── src/
-│   ├── FCG.Notifications.Application/   # Camada de aplicação
-│   │   └── Services/                    # INotificationService, NotificationService
-│   └── FCG.Notifications.Worker/        # Entry point (camada de apresentação)
-│       ├── Consumers/                   # UserCreatedConsumer, PaymentProcessedConsumer
-│       ├── Events/                      # Contratos de evento (copiados por valor)
-│       ├── Configuration/               # ConfigureMessaging (extensão MassTransit)
-│       ├── Program.cs
-│       ├── appsettings.json
-│       └── appsettings.Development.json
-├── k8s/                                 # Manifests Kubernetes
-├── docker-compose.yml                   # Ambiente local (worker + RabbitMQ)
-└── Dockerfile                           # Multi-stage, usuário não-root
+Domain ← Application ← Infra ← Worker
+                          ↑
+                        Tests
 ```
+
+### Camadas
+
+| Projeto | Responsabilidade | Dependências externas |
+|---|---|---|
+| `FCG.Notifications.Domain` | Interfaces de domínio (`INotificationService`) | Nenhuma |
+| `FCG.Notifications.Application` | Implementação do serviço de notificação | Domain, Logging.Abstractions |
+| `FCG.Notifications.Infra` | Consumers MassTransit, contratos de evento, configuração RabbitMQ | Application, MassTransit.RabbitMQ |
+| `FCG.Notifications.Worker` | Entry point — bootstrap do host e DI | Infra, Serilog |
+| `FCG.Notifications.Tests` | Testes unitários, BDD (Gherkin) e integração | Todos os anteriores |
 
 ### Padrões aplicados
 
-- **Event-Driven** — reage exclusivamente a eventos; não expõe HTTP e não persiste dados
-- **Consumer Pattern** — consumers independentes por tipo de evento
-- **Retry exponencial** — MassTransit retenta até 5 vezes com backoff (1s → 30s)
+- **Clean Architecture** — dependências sempre apontando para o centro (Domain)
+- **Event-Driven** — reage exclusivamente a eventos; não expõe HTTP
+- **Consumer Pattern** — consumers independentes por tipo de evento (camada Infra)
+- **Retry exponencial** — MassTransit retenta até 5 vezes com backoff (1 s → 30 s)
 - **Simulação** — e-mails são logados no console; sem integração SMTP real
 
 ---
@@ -69,8 +70,11 @@ fcg-notifications-api/
 |---|---|---|
 | Runtime | .NET | 10.0 |
 | Tipo de projeto | Worker Service | — |
-| Mensageria | MassTransit + RabbitMQ | 8.3.6 |
+| Mensageria | MassTransit + RabbitMQ | 8.1.3 |
 | Logging | Serilog | 8.x |
+| Testes | xUnit + Moq + FluentAssertions | 2.9.3 / 4.20 / 8.9 |
+| BDD | Reqnroll (Gherkin) | 3.0.0 |
+| Testes de integração | MassTransit TestHarness | 8.1.3 |
 
 ---
 
@@ -152,6 +156,38 @@ Jogo: {GameTitle}, Valor: R$ {Amount:F2}
 [EMAIL SIMULADO] Rejeição de compra enviada para {Email}.
 Jogo: {GameTitle}. Motivo: {Reason}
 ```
+
+---
+
+## Testes
+
+O projeto conta com **35 testes automatizados** cobrindo todas as camadas:
+
+```bash
+dotnet test
+```
+
+### Pirâmide de testes
+
+| Tipo | Quantidade | Ferramentas | O que cobre |
+|---|---|---|---|
+| Unitários — Application | 10 | xUnit + Moq + Bogus | `NotificationService`: todos os 3 métodos, nível de log, task completada |
+| Unitários — Infra | 12 | xUnit + Moq + Bogus | `UserCreatedConsumer` e `PaymentProcessedConsumer`: roteamento, argumentos, isolamento entre métodos |
+| BDD / Gherkin | 7 | Reqnroll 3.0 + Moq | Cenários em linguagem natural: boas-vindas, confirmação, rejeição, isolamento |
+| Integração | 5 | MassTransit TestHarness | Publicação de eventos no bus, consumo real pelos consumers, chamadas ao serviço |
+| **Total** | **35** | | |
+
+### Cobertura de cenários
+
+| Cenário | Teste |
+|---|---|
+| E-mail de boas-vindas é enviado ao criar usuário | Unit + BDD + Integração |
+| Nome e e-mail corretos passados ao serviço | Unit + BDD |
+| Confirmação enviada quando pagamento aprovado | Unit + BDD + Integração |
+| Rejeição enviada quando pagamento rejeitado | Unit + BDD + Integração |
+| Confirmação NÃO é enviada quando rejeitado | Unit + BDD |
+| Rejeição NÃO é enviada quando aprovado | Unit + BDD |
+| Motivo nulo tratado corretamente | Unit |
 
 ---
 
@@ -246,23 +282,48 @@ echo -n "sua_senha" | base64
 ## Estrutura do Projeto
 
 ```
-src/
-├── FCG.Notifications.Application/
-│   └── Services/
-│       ├── INotificationService.cs         # Contrato da camada de aplicação
-│       └── NotificationService.cs          # Implementação via log estruturado
-└── FCG.Notifications.Worker/
-    ├── Consumers/
-    │   ├── UserCreatedConsumer.cs          # Boas-vindas ao novo usuário
-    │   └── PaymentProcessedConsumer.cs     # Confirmação ou rejeição de compra
-    ├── Events/
-    │   ├── UserCreatedEvent.cs             # Contrato do evento (cópia por valor)
-    │   └── PaymentProcessedEvent.cs        # Contrato do evento (cópia por valor)
-    ├── Configuration/
-    │   └── ConfigureMessaging.cs           # Extension method — MassTransit + RabbitMQ
-    ├── Program.cs
-    ├── appsettings.json
-    └── appsettings.Development.json
+fcg-notifications-api/
+├── src/
+│   ├── FCG.Notifications.Domain/
+│   │   └── Interfaces/
+│   │       └── INotificationService.cs         # Contrato de domínio
+│   │
+│   ├── FCG.Notifications.Application/
+│   │   ├── Services/
+│   │   │   └── NotificationService.cs          # Implementação via log estruturado
+│   │   └── Configure/
+│   │       └── ApplicationConfigure.cs         # Extension: AddApplicationConfiguration()
+│   │
+│   ├── FCG.Notifications.Infra/
+│   │   ├── Consumers/
+│   │   │   ├── UserCreatedConsumer.cs          # Boas-vindas ao novo usuário
+│   │   │   └── PaymentProcessedConsumer.cs     # Confirmação ou rejeição de compra
+│   │   ├── Events/
+│   │   │   ├── UserCreatedEvent.cs             # Contrato do evento (cópia por valor)
+│   │   │   └── PaymentProcessedEvent.cs        # Contrato do evento + PaymentStatus enum
+│   │   └── Configure/
+│   │       └── ConfigureInfra.cs               # Extension: AddInfrastructure()
+│   │
+│   ├── FCG.Notifications.Worker/
+│   │   ├── Program.cs                          # Bootstrap do host e registro de DI
+│   │   ├── appsettings.json
+│   │   └── appsettings.Development.json
+│   │
+│   └── FCG.Notifications.Tests/
+│       ├── Unit/
+│       │   ├── Application/Services/           # NotificationServiceTests (10 testes)
+│       │   └── Infra/Consumers/                # UserCreated + PaymentProcessed (12 testes)
+│       ├── BDD/
+│       │   ├── Features/                       # UserCreatedNotification.feature (3 cenários)
+│       │   │                                   # PaymentProcessedNotification.feature (4 cenários)
+│       │   └── StepDefinitions/                # Step definitions Reqnroll
+│       └── Integration/
+│           ├── Config/                         # NotificationsTestFactory (MassTransit Harness)
+│           └── Consumers/                      # ConsumersIntegrationTests (5 testes)
+│
+├── k8s/                                        # Manifests Kubernetes
+├── docker-compose.yml                          # Ambiente local (worker + RabbitMQ)
+└── Dockerfile                                  # Multi-stage, usuário não-root
 ```
 
 ---
