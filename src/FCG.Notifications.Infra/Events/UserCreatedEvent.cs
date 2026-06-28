@@ -1,4 +1,4 @@
-namespace FCG.Notifications.Worker.Events;
+namespace FCG.Notifications.Infra.Events;
 
 public record UserCreatedEvent
 {

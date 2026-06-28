@@ -1,4 +1,4 @@
-namespace FCG.Notifications.Application.Services;
+namespace FCG.Notifications.Domain.Interfaces;
 
 public interface INotificationService
 {

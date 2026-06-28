@@ -1,3 +1,4 @@
+using FCG.Notifications.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace FCG.Notifications.Application.Services;

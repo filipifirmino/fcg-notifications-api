@@ -1,5 +1,5 @@
-using FCG.Notifications.Application.Services;
-using FCG.Notifications.Worker.Configuration;
+using FCG.Notifications.Application.Configure;
+using FCG.Notifications.Infra.Configure;
 using Serilog;
 
 var host = Host.CreateDefaultBuilder(args)
@@ -11,8 +11,8 @@ var host = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((hostContext, services) =>
     {
-        services.AddScoped<INotificationService, NotificationService>();
-        services.AddMessaging(hostContext.Configuration);
+        services.AddApplicationConfiguration();
+        services.AddInfrastructure(hostContext.Configuration);
     })
     .Build();
 

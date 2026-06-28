@@ -1,8 +1,9 @@
-using FCG.Notifications.Application.Services;
-using FCG.Notifications.Worker.Events;
+using FCG.Notifications.Domain.Interfaces;
+using FCG.Notifications.Infra.Events;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 
-namespace FCG.Notifications.Worker.Consumers;
+namespace FCG.Notifications.Infra.Consumers;
 
 public class UserCreatedConsumer : IConsumer<UserCreatedEvent>
 {

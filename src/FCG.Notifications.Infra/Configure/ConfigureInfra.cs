@@ -1,11 +1,13 @@
-using FCG.Notifications.Worker.Consumers;
+using FCG.Notifications.Infra.Consumers;
 using MassTransit;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace FCG.Notifications.Worker.Configuration;
+namespace FCG.Notifications.Infra.Configure;
 
-public static class ConfigureMessaging
+public static class ConfigureInfra
 {
-    public static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddMassTransit(x =>
         {
