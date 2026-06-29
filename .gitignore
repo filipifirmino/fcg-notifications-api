@@ -399,9 +399,6 @@ FodyWeavers.xsd
 .vs/GitHubRepo/DesignTimeBuild/.dtbcache.v2
 *.v2
 
-# Claude
-Claude.md
-.claude/*
-
-# Git
-.gitignore
+# Claude Code
+CLAUDE.md
+.claude/
