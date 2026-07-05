@@ -1,0 +1,1 @@
+dotnet run --project "C:\Projetos\POS FIAP\fcg-notifications-api\src\FCG.Notifications.Worker\tools\FCG.Notifications.TestPublisher\FCG.Notifications.TestPublisher.csproj"
