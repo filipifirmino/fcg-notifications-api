@@ -4,21 +4,28 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>fcg-notifications-worker</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <RootNamespace>FCG.Notifications.Worker</RootNamespace>
+    <UserSecretsId>dotnet-FCG.Notifications.Worker-8bb7b4a4-cfef-487b-86ce-dc82e7addf54</UserSecretsId>
   </PropertyGroup>
 
+  <!-- O TestPublisher vive em tools\ dentro deste projeto, mas e um projeto
+       independente. Excluido da compilacao do Worker para evitar conflito
+       de entry point (dois Main) e tipos duplicados. -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.4" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <Compile Remove="tools\**" />
+    <Content Remove="tools\**" />
+    <EmbeddedResource Remove="tools\**" />
+    <None Remove="tools\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.5" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.1" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FCG.Notifications.Application\FCG.Notifications.Application.csproj" />
     <ProjectReference Include="..\FCG.Notifications.Infra\FCG.Notifications.Infra.csproj" />
   </ItemGroup>
-
 </Project>

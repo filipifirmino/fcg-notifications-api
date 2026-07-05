@@ -2,18 +2,20 @@ using FCG.Notifications.Application.Configure;
 using FCG.Notifications.Infra.Configure;
 using Serilog;
 
-var host = Host.CreateDefaultBuilder(args)
-    .UseSerilog((context, configuration) =>
-    {
-        configuration
-            .ReadFrom.Configuration(context.Configuration)
-            .Enrich.FromLogContext();
-    })
-    .ConfigureServices((hostContext, services) =>
-    {
-        services.AddApplicationConfiguration();
-        services.AddInfrastructure(hostContext.Configuration);
-    })
-    .Build();
+var builder = Host.CreateApplicationBuilder(args);
 
-await host.RunAsync();
+// Logging estruturado via Serilog (configurado em appsettings.json + console).
+builder.Services.AddSerilog((services, configuration) => configuration
+    .ReadFrom.Configuration(builder.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .WriteTo.Console());
+
+// Camada de aplicação: registra INotificationService -> NotificationService.
+builder.Services.AddApplicationConfiguration();
+
+// Camada de infraestrutura: MassTransit + RabbitMQ, consumers e retry exponencial.
+builder.Services.AddInfrastructure(builder.Configuration);
+
+var host = builder.Build();
+host.Run();
