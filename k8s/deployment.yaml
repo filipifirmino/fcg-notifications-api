@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: notifications-worker
+  namespace: fcg
   labels:
     app: notifications-worker
 spec:

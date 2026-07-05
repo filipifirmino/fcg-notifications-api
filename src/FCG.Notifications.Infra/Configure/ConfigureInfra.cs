@@ -1,5 +1,8 @@
+using FCG.Notifications.Domain.Interfaces;
 using FCG.Notifications.Infra.Consumers;
+using FCG.Notifications.Infra.Repositories;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,6 +12,12 @@ public static class ConfigureInfra
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddDbContext<AppDbContext>(opts => opts
+            .UseNpgsql(configuration.GetConnectionString("Postgres"))
+            .UseSnakeCaseNamingConvention());
+
+        services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
+
         services.AddMassTransit(x =>
         {
             x.AddConsumer<UserCreatedConsumer>();
