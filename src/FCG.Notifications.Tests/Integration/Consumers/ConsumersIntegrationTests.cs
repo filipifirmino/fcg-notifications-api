@@ -1,6 +1,6 @@
 using Bogus;
 using FCG.Notifications.Domain.Interfaces;
-using FCG.Notifications.Infra.Events;
+using FCG.Events;
 using FCG.Notifications.Tests.Integration.Config;
 using FluentAssertions;
 using MassTransit.Testing;

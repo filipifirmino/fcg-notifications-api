@@ -1,5 +1,5 @@
 using FCG.Notifications.Domain.Interfaces;
-using FCG.Notifications.Infra.Events;
+using FCG.Events;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
